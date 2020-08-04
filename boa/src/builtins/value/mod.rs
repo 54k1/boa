@@ -253,7 +253,7 @@ impl Value {
             Self::Object(ref obj) => {
                 if obj.borrow().is_array() {
                     let mut arr: Vec<JSONValue> = Vec::new();
-                    for k in obj.borrow().properties().keys() {
+                    for k in obj.borrow().keys() {
                         if k != "length" {
                             let value = self.get_field(k.to_string());
                             if value.is_undefined() || value.is_function() || value.is_symbol() {
@@ -266,7 +266,7 @@ impl Value {
                     Ok(JSONValue::Array(arr))
                 } else {
                     let mut new_obj = Map::new();
-                    for k in obj.borrow().properties().keys() {
+                    for k in obj.borrow().keys() {
                         let key = k.clone();
                         let value = self.get_field(k.to_string());
                         if !value.is_undefined() && !value.is_function() && !value.is_symbol() {
@@ -496,30 +496,33 @@ impl Value {
     /// Removes a property from a Value object.
     ///
     /// It will return a boolean based on if the value was removed, if there was no value to remove false is returned.
-    pub fn remove_property(&self, field: &str) -> bool {
+    pub fn remove_property<Key>(&self, key: Key) -> bool
+    where
+        Key: Into<PropertyKey>,
+    {
         self.as_object_mut()
-            .and_then(|mut x| x.properties_mut().remove(field))
+            .map(|mut x| x.remove_property(&key.into()))
             .is_some()
     }
 
     /// Resolve the property in the object.
     ///
     /// A copy of the Property is returned.
-    pub fn get_property(&self, field: &str) -> Option<Property> {
+    pub fn get_property<Key>(&self, key: Key) -> Option<Property>
+    where
+        Key: Into<PropertyKey>,
+    {
+        let key = key.into();
         let _timer = BoaProfiler::global().start_event("Value::get_property", "value");
-        // Spidermonkey has its own GetLengthProperty: https://searchfox.org/mozilla-central/source/js/src/vm/Interpreter-inl.h#154
-        // This is only for primitive strings, String() objects have their lengths calculated in string.rs
         match self {
-            Self::Undefined => None,
-            Self::String(ref s) if field == "length" => {
-                Some(Property::default().value(Value::from(s.chars().count())))
-            }
             Self::Object(ref object) => {
                 let object = object.borrow();
-                match object.properties().get(field) {
-                    Some(value) => Some(value.clone()),
-                    None => object.prototype().get_property(field),
+                let property = object.get_own_property(&key);
+                if !property.is_none() {
+                    return Some(property);
                 }
+
+                object.prototype().get_property(key)
             }
             _ => None,
         }
@@ -533,49 +536,21 @@ impl Value {
         let _timer = BoaProfiler::global().start_event("Value::update_property", "value");
 
         if let Some(ref mut object) = self.as_object_mut() {
-            // Use value, or walk up the prototype chain
-            if let Some(property) = object.properties_mut().get_mut(field) {
-                *property = new_property;
-            }
+            object.insert_property(field, new_property);
         }
     }
 
     /// Resolve the property in the object and get its value, or undefined if this is not an object or the field doesn't exist
     /// get_field recieves a Property from get_prop(). It should then return the [[Get]] result value if that's set, otherwise fall back to [[Value]]
     /// TODO: this function should use the get Value if its set
-    pub fn get_field<F>(&self, field: F) -> Self
+    pub fn get_field<Key>(&self, key: Key) -> Self
     where
-        F: Into<Value>,
+        Key: Into<PropertyKey>,
     {
         let _timer = BoaProfiler::global().start_event("Value::get_field", "value");
-        match field.into() {
-            // Our field will either be a String or a Symbol
-            Self::String(ref s) => {
-                match self.get_property(s) {
-                    Some(prop) => {
-                        // If the Property has [[Get]] set to a function, we should run that and return the Value
-                        let prop_getter = match prop.get {
-                            Some(_) => None,
-                            None => None,
-                        };
-
-                        // If the getter is populated, use that. If not use [[Value]] instead
-                        if let Some(val) = prop_getter {
-                            val
-                        } else {
-                            let val = prop
-                                .value
-                                .as_ref()
-                                .expect("Could not get property as reference");
-                            val.clone()
-                        }
-                    }
-                    None => Value::undefined(),
-                }
-            }
-            Self::Symbol(_) => unimplemented!(),
-            _ => Value::undefined(),
-        }
+        self.as_object()
+            .map(|object| object.get(&key.into()))
+            .unwrap_or_else(Value::undefined)
     }
 
     /// Check whether an object has an internal state set.
@@ -640,9 +615,14 @@ impl Value {
 
     /// Check to see if the Value has the field, mainly used by environment records.
     #[inline]
-    pub fn has_field(&self, field: &str) -> bool {
+    pub fn has_field<Key>(&self, key: Key) -> bool
+    where
+        Key: Into<PropertyKey>,
+    {
         let _timer = BoaProfiler::global().start_event("Value::has_field", "value");
-        self.get_property(field).is_some()
+        self.as_object()
+            .map(|object| object.has_property(&key.into()))
+            .unwrap_or(false)
     }
 
     /// Set the field in the value
@@ -656,19 +636,15 @@ impl Value {
         let value = value.into();
         let _timer = BoaProfiler::global().start_event("Value::set_field", "value");
         if let Self::Object(ref obj) = *self {
-            if let PropertyKey::String(ref string) = field {
+            if let PropertyKey::Index(index) = field {
                 if obj.borrow().is_array() {
-                    if let Ok(num) = string.parse::<usize>() {
-                        if num > 0 {
-                            let len = i32::from(&self.get_field("length"));
-                            if len < (num + 1) as i32 {
-                                self.set_field("length", num + 1);
-                            }
-                        }
+                    let len = i32::from(&self.get_field("length")) as u32;
+                    if len < index + 1 {
+                        self.set_field("length", index + 1);
                     }
                 }
             }
-            obj.borrow_mut().set(&field, value.clone());
+            obj.borrow_mut().set(field, value.clone());
         }
         value
     }
@@ -682,14 +658,12 @@ impl Value {
     }
 
     /// Set the property in the value.
-    pub fn set_property<S>(&self, field: S, property: Property) -> Property
+    pub fn set_property<Key>(&self, key: Key, property: Property) -> Property
     where
-        S: Into<RcString>,
+        Key: Into<PropertyKey>,
     {
         if let Some(mut object) = self.as_object_mut() {
-            object
-                .properties_mut()
-                .insert(field.into(), property.clone());
+            object.insert_property(key.into(), property.clone());
         }
         property
     }

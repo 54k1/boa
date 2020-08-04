@@ -107,9 +107,7 @@ pub(crate) fn log_string_from(x: &Value, print_internals: bool, print_children: 
                                 // which are part of the Array
                                 log_string_from(
                                     &v.borrow()
-                                        .properties()
-                                        .get(i.to_string().as_str())
-                                        .unwrap()
+                                        .get_own_property(&i.into())
                                         .value
                                         .clone()
                                         .expect("Could not borrow value"),

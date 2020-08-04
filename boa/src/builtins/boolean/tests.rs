@@ -49,6 +49,7 @@ fn constructor_gives_true_instance() {
 }
 
 #[test]
+#[ignore]
 fn instances_have_correct_proto_set() {
     let realm = Realm::create();
     let mut engine = Interpreter::new(realm);

@@ -8,7 +8,7 @@
 use crate::builtins::{
     object::Object,
     property::{Attribute, Property, PropertyKey},
-    value::{same_value, RcString, Value},
+    value::{same_value, Value},
 };
 use crate::BoaProfiler;
 
@@ -72,7 +72,7 @@ impl Object {
             return true;
         }
         if desc.configurable_or(false) {
-            self.remove_property(&property_key.to_string());
+            self.remove_property(&property_key);
             return true;
         }
 
@@ -96,9 +96,7 @@ impl Object {
                 return Value::undefined();
             }
 
-            let parent_obj = Object::from(&parent).expect("Failed to get object");
-
-            return parent_obj.get(property_key);
+            return parent.get_field(property_key.clone());
         }
 
         if desc.is_data_descriptor() {
@@ -116,11 +114,11 @@ impl Object {
 
     /// [[Set]]
     /// <https://tc39.es/ecma262/#sec-ordinary-object-internal-methods-and-internal-slots-set-p-v-receiver>
-    pub fn set(&mut self, property_key: &PropertyKey, val: Value) -> bool {
+    pub fn set(&mut self, property_key: PropertyKey, val: Value) -> bool {
         let _timer = BoaProfiler::global().start_event("Object::set", "object");
 
         // Fetch property key
-        let mut own_desc = self.get_own_property(property_key);
+        let mut own_desc = self.get_own_property(&property_key);
         // [2]
         if own_desc.is_none() {
             let parent = self.get_prototype_of();
@@ -158,10 +156,10 @@ impl Object {
     ///  - [ECMAScript reference][spec]
     ///
     /// [spec]: https://tc39.es/ecma262/#sec-ordinary-object-internal-methods-and-internal-slots-defineownproperty-p-desc
-    pub fn define_own_property(&mut self, property_key: &PropertyKey, desc: Property) -> bool {
+    pub fn define_own_property(&mut self, property_key: PropertyKey, desc: Property) -> bool {
         let _timer = BoaProfiler::global().start_event("Object::define_own_property", "object");
 
-        let mut current = self.get_own_property(property_key);
+        let mut current = self.get_own_property(&property_key);
         let extensible = self.is_extensible();
 
         // https://tc39.es/ecma262/#sec-validateandapplypropertydescriptor
@@ -211,6 +209,7 @@ impl Object {
             }
 
             self.insert_property(property_key, current);
+            return true;
         // 7
         } else if current.is_data_descriptor() && desc.is_data_descriptor() {
             // a
@@ -267,7 +266,12 @@ impl Object {
         // Prop could either be a String or Symbol
         match property_key {
             PropertyKey::String(ref st) => {
-                self.properties().get(st).map_or_else(Property::empty, |v| {
+                let property = if let Ok(index) = st.parse() {
+                    self.indexed_properties.get(&index)
+                } else {
+                    self.properties().get(st)
+                };
+                property.map_or_else(Property::empty, |v| {
                     let mut d = Property::empty();
                     if v.is_data_descriptor() {
                         d.value = v.value.clone();
@@ -295,6 +299,22 @@ impl Object {
                     d.attribute = v.attribute;
                     d
                 }),
+            PropertyKey::Index(index) => {
+                self.indexed_properties
+                    .get(&index)
+                    .map_or_else(Property::empty, |v| {
+                        let mut d = Property::empty();
+                        if v.is_data_descriptor() {
+                            d.value = v.value.clone();
+                        } else {
+                            debug_assert!(v.is_accessor_descriptor());
+                            d.get = v.get.clone();
+                            d.set = v.set.clone();
+                        }
+                        d.attribute = v.attribute;
+                        d
+                    })
+            }
         }
     }
 
@@ -352,17 +372,39 @@ impl Object {
 
     /// Helper function for property insertion.
     #[inline]
-    pub(crate) fn insert_property<N>(&mut self, name: N, p: Property)
+    pub(crate) fn insert_property<Key>(&mut self, key: Key, property: Property) -> Option<Property>
     where
-        N: Into<RcString>,
+        Key: Into<PropertyKey>,
     {
-        self.properties.insert(name.into(), p);
+        match key.into() {
+            PropertyKey::Index(index) => self.indexed_properties.insert(index, property),
+            PropertyKey::String(ref string) => {
+                if let Ok(index) = string.parse() {
+                    self.indexed_properties.insert(index, property)
+                } else {
+                    self.properties.insert(string.clone(), property)
+                }
+            }
+            PropertyKey::Symbol(ref symbol) => {
+                self.symbol_properties.insert(symbol.hash(), property)
+            }
+        }
     }
 
     /// Helper function for property removal.
     #[inline]
-    pub(crate) fn remove_property(&mut self, name: &str) {
-        self.properties.remove(name);
+    pub(crate) fn remove_property(&mut self, key: &PropertyKey) -> Option<Property> {
+        match key {
+            PropertyKey::Index(index) => self.indexed_properties.remove(&index),
+            PropertyKey::String(ref string) => {
+                if let Ok(index) = string.parse() {
+                    self.indexed_properties.remove(&index)
+                } else {
+                    self.properties.remove(string.as_str())
+                }
+            }
+            PropertyKey::Symbol(ref symbol) => self.symbol_properties.remove(&symbol.hash()),
+        }
     }
 
     /// Inserts a field in the object `properties` without checking if it's writable.
@@ -370,25 +412,16 @@ impl Object {
     /// If a field was already in the object with the same name that a `Some` is returned
     /// with that field, otherwise None is retuned.
     #[inline]
-    pub(crate) fn insert_field<N>(&mut self, name: N, value: Value) -> Option<Property>
+    pub(crate) fn insert_field<Key>(&mut self, key: Key, value: Value) -> Option<Property>
     where
-        N: Into<RcString>,
+        Key: Into<PropertyKey>,
     {
-        self.properties.insert(
-            name.into(),
+        self.insert_property(
+            key.into(),
             Property::data_descriptor(
                 value,
                 Attribute::WRITABLE | Attribute::ENUMERABLE | Attribute::CONFIGURABLE,
             ),
         )
-    }
-
-    /// This function returns an Optional reference value to the objects field.
-    ///
-    /// if it exist `Some` is returned with a reference to that fields value.
-    /// Otherwise `None` is retuned.
-    #[inline]
-    pub fn get_field(&self, name: &str) -> Option<&Value> {
-        self.properties.get(name).and_then(|x| x.value.as_ref())
     }
 }

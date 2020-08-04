@@ -17,7 +17,7 @@ use crate::{
     builtins::{
         function::Function,
         map::ordered_map::OrderedMap,
-        property::Property,
+        property::{Property, PropertyKey},
         value::{RcBigInt, RcString, RcSymbol, ResultValue, Value},
         BigInt, Date, RegExp,
     },
@@ -26,6 +26,7 @@ use crate::{
 };
 use gc::{Finalize, Trace};
 use rustc_hash::FxHashMap;
+use std::collections::hash_map;
 use std::fmt::{Debug, Display, Error, Formatter};
 
 use super::function::{make_builtin_fn, make_constructor_fn};
@@ -52,6 +53,7 @@ pub static PROTOTYPE: &str = "prototype";
 pub struct Object {
     /// The type of the object.
     pub data: ObjectData,
+    indexed_properties: FxHashMap<u32, Property>,
     /// Properties
     properties: FxHashMap<RcString, Property>,
     /// Symbol Properties
@@ -112,6 +114,7 @@ impl Default for Object {
     fn default() -> Self {
         Self {
             data: ObjectData::Ordinary,
+            indexed_properties: FxHashMap::default(),
             properties: FxHashMap::default(),
             symbol_properties: FxHashMap::default(),
             prototype: Value::null(),
@@ -133,6 +136,7 @@ impl Object {
 
         Self {
             data: ObjectData::Function(function),
+            indexed_properties: FxHashMap::default(),
             properties: FxHashMap::default(),
             symbol_properties: FxHashMap::default(),
             prototype,
@@ -158,6 +162,7 @@ impl Object {
     pub fn boolean(value: bool) -> Self {
         Self {
             data: ObjectData::Boolean(value),
+            indexed_properties: FxHashMap::default(),
             properties: FxHashMap::default(),
             symbol_properties: FxHashMap::default(),
             prototype: Value::null(),
@@ -170,6 +175,7 @@ impl Object {
     pub fn number(value: f64) -> Self {
         Self {
             data: ObjectData::Number(value),
+            indexed_properties: FxHashMap::default(),
             properties: FxHashMap::default(),
             symbol_properties: FxHashMap::default(),
             prototype: Value::null(),
@@ -185,6 +191,7 @@ impl Object {
     {
         Self {
             data: ObjectData::String(value.into()),
+            indexed_properties: FxHashMap::default(),
             properties: FxHashMap::default(),
             symbol_properties: FxHashMap::default(),
             prototype: Value::null(),
@@ -197,6 +204,7 @@ impl Object {
     pub fn bigint(value: RcBigInt) -> Self {
         Self {
             data: ObjectData::BigInt(value),
+            indexed_properties: FxHashMap::default(),
             properties: FxHashMap::default(),
             symbol_properties: FxHashMap::default(),
             prototype: Value::null(),
@@ -436,6 +444,48 @@ impl Object {
     pub fn set_prototype(&mut self, prototype: Value) {
         assert!(prototype.is_null() || prototype.is_object());
         self.prototype = prototype
+    }
+
+    pub fn iter(&self) -> Iter<'_> {
+        Iter {
+            indexed_properties: self.indexed_properties.iter(),
+            properties: self.properties.iter(),
+        }
+    }
+
+    pub fn keys(&self) -> Keys<'_> {
+        Keys { inner: self.iter() }
+    }
+}
+
+#[derive(Debug)]
+pub struct Iter<'a> {
+    indexed_properties: hash_map::Iter<'a, u32, Property>,
+    properties: hash_map::Iter<'a, RcString, Property>,
+}
+
+impl<'a> Iterator for Iter<'a> {
+    type Item = (PropertyKey, &'a Property);
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some((key, value)) = self.indexed_properties.next() {
+            Some(((*key).into(), value))
+        } else {
+            let (key, value) = self.properties.next()?;
+            Some((key.clone().into(), value))
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Keys<'a> {
+    inner: Iter<'a>,
+}
+
+impl<'a> Iterator for Keys<'a> {
+    type Item = PropertyKey;
+    fn next(&mut self) -> Option<Self::Item> {
+        let (key, _) = self.inner.next()?;
+        Some(key)
     }
 }
 

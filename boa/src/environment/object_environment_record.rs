@@ -63,8 +63,6 @@ impl EnvironmentRecordTrait for ObjectEnvironmentRecord {
     }
 
     fn set_mutable_binding(&mut self, name: &str, value: Value, strict: bool) {
-        debug_assert!(value.is_object() || value.is_function());
-
         let mut property = Property::data_descriptor(value, Attribute::ENUMERABLE);
         property.set_configurable(strict);
         self.bindings.update_property(name, property);
