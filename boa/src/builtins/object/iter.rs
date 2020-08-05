@@ -48,6 +48,13 @@ impl Object {
             indexes: self.indexed_properties.iter(),
         }
     }
+
+    #[inline]
+    pub fn indexe_keys(&self) -> IndexKeys<'_> {
+        IndexKeys {
+            indexes: self.indexed_properties.keys(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -232,3 +239,31 @@ impl ExactSizeIterator for Indexes<'_> {
 }
 
 impl FusedIterator for Indexes<'_> {}
+
+#[derive(Debug, Clone)]
+pub struct IndexKeys<'a> {
+    indexes: hash_map::Keys<'a, u32, Property>,
+}
+
+impl<'a> Iterator for IndexKeys<'a> {
+    type Item = &'a u32;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.indexes.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.indexes.size_hint()
+    }
+}
+
+impl ExactSizeIterator for IndexKeys<'_> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.indexes.len()
+    }
+}
+
+impl FusedIterator for IndexKeys<'_> {}
