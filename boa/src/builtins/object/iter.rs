@@ -27,6 +27,13 @@ impl Object {
             symbols: self.symbol_properties.iter(),
         }
     }
+
+    #[inline]
+    pub fn symbol_keys(&self) -> SymbolKeys<'_> {
+        SymbolKeys {
+            symbols: self.symbol_properties.keys(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -127,3 +134,31 @@ impl ExactSizeIterator for Symbols<'_> {
 }
 
 impl FusedIterator for Symbols<'_> {}
+
+#[derive(Debug, Clone)]
+pub struct SymbolKeys<'a> {
+    symbols: hash_map::Keys<'a, RcSymbol, Property>,
+}
+
+impl<'a> Iterator for SymbolKeys<'a> {
+    type Item = &'a RcSymbol;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.symbols.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.symbols.size_hint()
+    }
+}
+
+impl ExactSizeIterator for SymbolKeys<'_> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.symbols.len()
+    }
+}
+
+impl FusedIterator for SymbolKeys<'_> {}
