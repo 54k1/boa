@@ -29,8 +29,8 @@ use crate::{
         number::{f64_to_int32, f64_to_uint32},
         object::{Object, ObjectData, PROTOTYPE},
         property::PropertyKey,
-        value::{RcBigInt, RcString, ResultValue, Type, Value},
-        BigInt, Console, Number,
+        value::{RcBigInt, RcString, RcSymbol, ResultValue, Type, Value},
+        BigInt, Console, Number, Symbol,
     },
     realm::Realm,
     syntax::ast::{
@@ -674,6 +674,11 @@ impl Interpreter {
     /// A helper function for getting a mutable reference to the `console` object.
     pub(crate) fn console_mut(&mut self) -> &mut Console {
         &mut self.console
+    }
+
+    /// Construct a new `Symbol` with an optional description.
+    pub fn construct_symbol(&mut self, description: Option<RcString>) -> RcSymbol {
+        RcSymbol::from(Symbol::new(self.generate_hash(), description))
     }
 }
 
