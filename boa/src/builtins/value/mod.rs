@@ -548,9 +548,34 @@ impl Value {
         Key: Into<PropertyKey>,
     {
         let _timer = BoaProfiler::global().start_event("Value::get_field", "value");
-        self.as_object()
-            .map(|object| object.get(&key.into()))
-            .unwrap_or_else(Value::undefined)
+        let key = key.into();
+        match key {
+            // Our field will either be a String or a Symbol
+            PropertyKey::String(_) | PropertyKey::Index(_) => {
+                match self.get_property(key) {
+                    Some(prop) => {
+                        // If the Property has [[Get]] set to a function, we should run that and return the Value
+                        let prop_getter = match prop.get {
+                            Some(_) => None,
+                            None => None,
+                        };
+
+                        // If the getter is populated, use that. If not use [[Value]] instead
+                        if let Some(val) = prop_getter {
+                            val
+                        } else {
+                            let val = prop
+                                .value
+                                .as_ref()
+                                .expect("Could not get property as reference");
+                            val.clone()
+                        }
+                    }
+                    None => Value::undefined(),
+                }
+            }
+            PropertyKey::Symbol(_) => unimplemented!(),
+        }
     }
 
     /// Check whether an object has an internal state set.
