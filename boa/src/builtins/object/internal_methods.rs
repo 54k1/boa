@@ -156,10 +156,14 @@ impl Object {
     ///  - [ECMAScript reference][spec]
     ///
     /// [spec]: https://tc39.es/ecma262/#sec-ordinary-object-internal-methods-and-internal-slots-defineownproperty-p-desc
-    pub fn define_own_property(&mut self, property_key: PropertyKey, desc: Property) -> bool {
+    pub fn define_own_property<Key>(&mut self, key: Key, desc: Property) -> bool
+    where
+        Key: Into<PropertyKey>,
+    {
         let _timer = BoaProfiler::global().start_event("Object::define_own_property", "object");
 
-        let mut current = self.get_own_property(&property_key);
+        let key = key.into();
+        let mut current = self.get_own_property(&key);
         let extensible = self.is_extensible();
 
         // https://tc39.es/ecma262/#sec-validateandapplypropertydescriptor
@@ -169,7 +173,7 @@ impl Object {
                 return false;
             }
 
-            self.insert_property(property_key, desc);
+            self.insert_property(key, desc);
             return true;
         }
         // If every field is absent we don't need to set anything
@@ -208,7 +212,7 @@ impl Object {
                 current.set = None;
             }
 
-            self.insert_property(property_key, current);
+            self.insert_property(key, current);
             return true;
         // 7
         } else if current.is_data_descriptor() && desc.is_data_descriptor() {
@@ -248,7 +252,7 @@ impl Object {
             return true;
         }
         // 9
-        self.insert_property(property_key, desc);
+        self.insert_property(key, desc);
         true
     }
 

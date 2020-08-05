@@ -20,7 +20,10 @@ mod tests;
 
 use super::function::{make_builtin_fn, make_constructor_fn};
 use crate::{
-    builtins::value::{RcString, RcSymbol, ResultValue, Value},
+    builtins::{
+        property::{Attribute, Property},
+        value::{RcString, RcSymbol, ResultValue, Value},
+    },
     exec::Interpreter,
     BoaProfiler,
 };
@@ -153,22 +156,62 @@ impl Symbol {
             true,
         );
 
-        symbol_object.set_field("asyncIterator", Value::symbol(symbol_async_iterator));
-        symbol_object.set_field("hasInstance", Value::symbol(symbol_has_instance));
-        symbol_object.set_field(
-            "isConcatSpreadable",
-            Value::symbol(symbol_is_concat_spreadable),
-        );
-        symbol_object.set_field("iterator", Value::symbol(symbol_iterator));
-        symbol_object.set_field("match", Value::symbol(symbol_match));
-        symbol_object.set_field("matchAll", Value::symbol(symbol_match_all));
-        symbol_object.set_field("replace", Value::symbol(symbol_replace));
-        symbol_object.set_field("search", Value::symbol(symbol_search));
-        symbol_object.set_field("species", Value::symbol(symbol_species));
-        symbol_object.set_field("split", Value::symbol(symbol_split));
-        symbol_object.set_field("toPrimitive", Value::symbol(symbol_to_primitive));
-        symbol_object.set_field("toStringTag", Value::symbol(symbol_to_string_tag));
-        symbol_object.set_field("unscopables", Value::symbol(symbol_unscopables));
+        {
+            let mut symbol_object = symbol_object.as_object_mut().unwrap();
+            let attribute = Attribute::READONLY | Attribute::NON_ENUMERABLE | Attribute::PERMANENT;
+            symbol_object.define_own_property(
+                "asyncIterator",
+                Property::data_descriptor(Value::symbol(symbol_async_iterator), attribute),
+            );
+            symbol_object.define_own_property(
+                "hasInstance",
+                Property::data_descriptor(Value::symbol(symbol_has_instance), attribute),
+            );
+            symbol_object.define_own_property(
+                "isConcatSpreadable",
+                Property::data_descriptor(Value::symbol(symbol_is_concat_spreadable), attribute),
+            );
+            symbol_object.define_own_property(
+                "iterator",
+                Property::data_descriptor(Value::symbol(symbol_iterator), attribute),
+            );
+            symbol_object.define_own_property(
+                "match",
+                Property::data_descriptor(Value::symbol(symbol_match), attribute),
+            );
+            symbol_object.define_own_property(
+                "matchAll",
+                Property::data_descriptor(Value::symbol(symbol_match_all), attribute),
+            );
+            symbol_object.define_own_property(
+                "replace",
+                Property::data_descriptor(Value::symbol(symbol_replace), attribute),
+            );
+            symbol_object.define_own_property(
+                "search",
+                Property::data_descriptor(Value::symbol(symbol_search), attribute),
+            );
+            symbol_object.define_own_property(
+                "species",
+                Property::data_descriptor(Value::symbol(symbol_species), attribute),
+            );
+            symbol_object.define_own_property(
+                "split",
+                Property::data_descriptor(Value::symbol(symbol_split), attribute),
+            );
+            symbol_object.define_own_property(
+                "toPrimitive",
+                Property::data_descriptor(Value::symbol(symbol_to_primitive), attribute),
+            );
+            symbol_object.define_own_property(
+                "toStringTag",
+                Property::data_descriptor(Value::symbol(symbol_to_string_tag), attribute),
+            );
+            symbol_object.define_own_property(
+                "unscopables",
+                Property::data_descriptor(Value::symbol(symbol_unscopables), attribute),
+            );
+        }
 
         (Self::NAME, symbol_object)
     }
