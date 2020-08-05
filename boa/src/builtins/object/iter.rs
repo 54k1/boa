@@ -50,9 +50,16 @@ impl Object {
     }
 
     #[inline]
-    pub fn indexe_keys(&self) -> IndexKeys<'_> {
+    pub fn index_keys(&self) -> IndexKeys<'_> {
         IndexKeys {
             indexes: self.indexed_properties.keys(),
+        }
+    }
+
+    #[inline]
+    pub fn index_values(&self) -> IndexValues<'_> {
+        IndexValues {
+            indexes: self.indexed_properties.values(),
         }
     }
 }
@@ -267,3 +274,31 @@ impl ExactSizeIterator for IndexKeys<'_> {
 }
 
 impl FusedIterator for IndexKeys<'_> {}
+
+#[derive(Debug, Clone)]
+pub struct IndexValues<'a> {
+    indexes: hash_map::Values<'a, u32, Property>,
+}
+
+impl<'a> Iterator for IndexValues<'a> {
+    type Item = &'a Property;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.indexes.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.indexes.size_hint()
+    }
+}
+
+impl ExactSizeIterator for IndexValues<'_> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.indexes.len()
+    }
+}
+
+impl FusedIterator for IndexValues<'_> {}
