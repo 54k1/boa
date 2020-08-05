@@ -56,7 +56,7 @@ pub struct Object {
     pub data: ObjectData,
     indexed_properties: FxHashMap<u32, Property>,
     /// Properties
-    properties: FxHashMap<RcString, Property>,
+    pub(crate) properties: FxHashMap<RcString, Property>,
     /// Symbol Properties
     symbol_properties: FxHashMap<RcSymbol, Property>,
     /// Instance prototype `__proto__`.
@@ -406,26 +406,6 @@ impl Object {
     #[inline]
     pub fn is_ordinary(&self) -> bool {
         matches!(self.data, ObjectData::Ordinary)
-    }
-
-    #[inline]
-    pub fn properties(&self) -> &FxHashMap<RcString, Property> {
-        &self.properties
-    }
-
-    #[inline]
-    pub fn properties_mut(&mut self) -> &mut FxHashMap<RcString, Property> {
-        &mut self.properties
-    }
-
-    #[inline]
-    pub fn symbol_properties(&self) -> &FxHashMap<RcSymbol, Property> {
-        &self.symbol_properties
-    }
-
-    #[inline]
-    pub fn symbol_properties_mut(&mut self) -> &mut FxHashMap<RcSymbol, Property> {
-        &mut self.symbol_properties
     }
 
     #[inline]

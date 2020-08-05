@@ -150,8 +150,7 @@ impl Json {
                 })
                 .ok_or_else(Value::undefined)?
         } else if replacer_as_object.is_array() {
-            let mut obj_to_return =
-                serde_json::Map::with_capacity(replacer_as_object.properties().len() - 1);
+            let mut obj_to_return = serde_json::Map::new();
             let fields = replacer_as_object.keys().filter_map(|key| {
                 if key == "length" {
                     None

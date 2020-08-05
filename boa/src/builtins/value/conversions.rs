@@ -156,10 +156,7 @@ where
     fn from(value: &[T]) -> Self {
         let mut array = Object::default();
         for (i, item) in value.iter().enumerate() {
-            array.properties_mut().insert(
-                RcString::from(i.to_string()),
-                Property::default().value(item.clone().into()),
-            );
+            array.insert_property(i, Property::default().value(item.clone().into()));
         }
         Self::from(array)
     }

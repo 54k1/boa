@@ -92,7 +92,7 @@ impl<'a> Iterator for Iter<'a> {
 impl ExactSizeIterator for Iter<'_> {
     #[inline]
     fn len(&self) -> usize {
-        self.indexed_properties.len() + self.string_properties.len()
+        self.indexed_properties.len() + self.string_properties.len() + self.symbol_properties.len()
     }
 }
 

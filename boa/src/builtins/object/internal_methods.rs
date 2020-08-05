@@ -266,7 +266,7 @@ impl Object {
         // Prop could either be a String or Symbol
         match property_key {
             PropertyKey::String(ref st) => {
-                self.properties().get(st).map_or_else(Property::empty, |v| {
+                self.properties.get(st).map_or_else(Property::empty, |v| {
                     let mut d = Property::empty();
                     if v.is_data_descriptor() {
                         d.value = v.value.clone();
@@ -280,7 +280,7 @@ impl Object {
                 })
             }
             PropertyKey::Symbol(ref symbol) => {
-                self.symbol_properties()
+                self.symbol_properties
                     .get(symbol)
                     .map_or_else(Property::empty, |v| {
                         let mut d = Property::empty();
