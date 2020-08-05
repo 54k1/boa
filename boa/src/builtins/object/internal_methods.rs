@@ -266,12 +266,7 @@ impl Object {
         // Prop could either be a String or Symbol
         match property_key {
             PropertyKey::String(ref st) => {
-                let property = if let Ok(index) = st.parse() {
-                    self.indexed_properties.get(&index)
-                } else {
-                    self.properties().get(st)
-                };
-                property.map_or_else(Property::empty, |v| {
+                self.properties().get(st).map_or_else(Property::empty, |v| {
                     let mut d = Property::empty();
                     if v.is_data_descriptor() {
                         d.value = v.value.clone();
@@ -378,13 +373,7 @@ impl Object {
     {
         match key.into() {
             PropertyKey::Index(index) => self.indexed_properties.insert(index, property),
-            PropertyKey::String(ref string) => {
-                if let Ok(index) = string.parse() {
-                    self.indexed_properties.insert(index, property)
-                } else {
-                    self.properties.insert(string.clone(), property)
-                }
-            }
+            PropertyKey::String(ref string) => self.properties.insert(string.clone(), property),
             PropertyKey::Symbol(ref symbol) => {
                 self.symbol_properties.insert(symbol.hash(), property)
             }
@@ -396,13 +385,7 @@ impl Object {
     pub(crate) fn remove_property(&mut self, key: &PropertyKey) -> Option<Property> {
         match key {
             PropertyKey::Index(index) => self.indexed_properties.remove(&index),
-            PropertyKey::String(ref string) => {
-                if let Ok(index) = string.parse() {
-                    self.indexed_properties.remove(&index)
-                } else {
-                    self.properties.remove(string.as_str())
-                }
-            }
+            PropertyKey::String(ref string) => self.properties.remove(string),
             PropertyKey::Symbol(ref symbol) => self.symbol_properties.remove(&symbol.hash()),
         }
     }
