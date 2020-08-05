@@ -28,6 +28,7 @@ use gc::{Finalize, Trace};
 use rustc_hash::FxHashMap;
 use std::collections::hash_map;
 use std::fmt::{Debug, Display, Error, Formatter};
+use std::iter::FusedIterator;
 
 use super::function::{make_builtin_fn, make_constructor_fn};
 use crate::builtins::value::same_value;
@@ -456,9 +457,13 @@ impl Object {
     pub fn keys(&self) -> Keys<'_> {
         Keys { inner: self.iter() }
     }
+
+    pub fn values(&self) -> Values<'_> {
+        Values { inner: self.iter() }
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Iter<'a> {
     indexed_properties: hash_map::Iter<'a, u32, Property>,
     properties: hash_map::Iter<'a, RcString, Property>,
@@ -476,7 +481,16 @@ impl<'a> Iterator for Iter<'a> {
     }
 }
 
-#[derive(Debug)]
+impl ExactSizeIterator for Iter<'_> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.indexed_properties.len() + self.properties.len()
+    }
+}
+
+impl FusedIterator for Iter<'_> {}
+
+#[derive(Debug, Clone)]
 pub struct Keys<'a> {
     inner: Iter<'a>,
 }
@@ -488,6 +502,37 @@ impl<'a> Iterator for Keys<'a> {
         Some(key)
     }
 }
+
+impl ExactSizeIterator for Keys<'_> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+impl FusedIterator for Keys<'_> {}
+
+#[derive(Debug, Clone)]
+pub struct Values<'a> {
+    inner: Iter<'a>,
+}
+
+impl<'a> Iterator for Values<'a> {
+    type Item = &'a Property;
+    fn next(&mut self) -> Option<Self::Item> {
+        let (_, value) = self.inner.next()?;
+        Some(value)
+    }
+}
+
+impl ExactSizeIterator for Values<'_> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+impl FusedIterator for Values<'_> {}
 
 /// Create a new object.
 pub fn make_object(_: &Value, args: &[Value], ctx: &mut Interpreter) -> ResultValue {
