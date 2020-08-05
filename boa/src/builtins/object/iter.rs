@@ -8,6 +8,7 @@ impl Object {
         Iter {
             indexed_properties: self.indexed_properties.iter(),
             string_properties: self.properties.iter(),
+            symbol_properties: self.symbol_properties.iter(),
         }
     }
 
@@ -71,6 +72,7 @@ impl Object {
 pub struct Iter<'a> {
     indexed_properties: hash_map::Iter<'a, u32, Property>,
     string_properties: hash_map::Iter<'a, RcString, Property>,
+    symbol_properties: hash_map::Iter<'a, RcSymbol, Property>,
 }
 
 impl<'a> Iterator for Iter<'a> {
@@ -78,8 +80,10 @@ impl<'a> Iterator for Iter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         if let Some((key, value)) = self.indexed_properties.next() {
             Some(((*key).into(), value))
+        } else if let Some((key, value)) = self.string_properties.next() {
+            Some((key.clone().into(), value))
         } else {
-            let (key, value) = self.string_properties.next()?;
+            let (key, value) = self.symbol_properties.next()?;
             Some((key.clone().into(), value))
         }
     }
