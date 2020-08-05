@@ -58,7 +58,7 @@ pub struct Object {
     /// Properties
     properties: FxHashMap<RcString, Property>,
     /// Symbol Properties
-    symbol_properties: FxHashMap<u32, Property>,
+    symbol_properties: FxHashMap<RcSymbol, Property>,
     /// Instance prototype `__proto__`.
     prototype: Value,
     /// Some rust object that stores internal state
@@ -419,12 +419,12 @@ impl Object {
     }
 
     #[inline]
-    pub fn symbol_properties(&self) -> &FxHashMap<u32, Property> {
+    pub fn symbol_properties(&self) -> &FxHashMap<RcSymbol, Property> {
         &self.symbol_properties
     }
 
     #[inline]
-    pub fn symbol_properties_mut(&mut self) -> &mut FxHashMap<u32, Property> {
+    pub fn symbol_properties_mut(&mut self) -> &mut FxHashMap<RcSymbol, Property> {
         &mut self.symbol_properties
     }
 

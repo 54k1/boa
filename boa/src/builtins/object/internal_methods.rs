@@ -279,21 +279,22 @@ impl Object {
                     d
                 })
             }
-            PropertyKey::Symbol(ref symbol) => self
-                .symbol_properties()
-                .get(&symbol.hash())
-                .map_or_else(Property::empty, |v| {
-                    let mut d = Property::empty();
-                    if v.is_data_descriptor() {
-                        d.value = v.value.clone();
-                    } else {
-                        debug_assert!(v.is_accessor_descriptor());
-                        d.get = v.get.clone();
-                        d.set = v.set.clone();
-                    }
-                    d.attribute = v.attribute;
-                    d
-                }),
+            PropertyKey::Symbol(ref symbol) => {
+                self.symbol_properties()
+                    .get(symbol)
+                    .map_or_else(Property::empty, |v| {
+                        let mut d = Property::empty();
+                        if v.is_data_descriptor() {
+                            d.value = v.value.clone();
+                        } else {
+                            debug_assert!(v.is_accessor_descriptor());
+                            d.get = v.get.clone();
+                            d.set = v.set.clone();
+                        }
+                        d.attribute = v.attribute;
+                        d
+                    })
+            }
             PropertyKey::Index(index) => {
                 self.indexed_properties
                     .get(&index)
@@ -375,7 +376,7 @@ impl Object {
             PropertyKey::Index(index) => self.indexed_properties.insert(index, property),
             PropertyKey::String(ref string) => self.properties.insert(string.clone(), property),
             PropertyKey::Symbol(ref symbol) => {
-                self.symbol_properties.insert(symbol.hash(), property)
+                self.symbol_properties.insert(symbol.clone(), property)
             }
         }
     }
@@ -386,7 +387,7 @@ impl Object {
         match key {
             PropertyKey::Index(index) => self.indexed_properties.remove(&index),
             PropertyKey::String(ref string) => self.properties.remove(string),
-            PropertyKey::Symbol(ref symbol) => self.symbol_properties.remove(&symbol.hash()),
+            PropertyKey::Symbol(ref symbol) => self.symbol_properties.remove(symbol),
         }
     }
 
