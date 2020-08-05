@@ -41,6 +41,13 @@ impl Object {
             symbols: self.symbol_properties.values(),
         }
     }
+
+    #[inline]
+    pub fn indexes(&self) -> Indexes<'_> {
+        Indexes {
+            indexes: self.indexed_properties.iter(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -197,3 +204,31 @@ impl ExactSizeIterator for SymbolValues<'_> {
 }
 
 impl FusedIterator for SymbolValues<'_> {}
+
+#[derive(Debug, Clone)]
+pub struct Indexes<'a> {
+    indexes: hash_map::Iter<'a, u32, Property>,
+}
+
+impl<'a> Iterator for Indexes<'a> {
+    type Item = (&'a u32, &'a Property);
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.indexes.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.indexes.size_hint()
+    }
+}
+
+impl ExactSizeIterator for Indexes<'_> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.indexes.len()
+    }
+}
+
+impl FusedIterator for Indexes<'_> {}
