@@ -27,7 +27,7 @@ use crate::{
     builtins::{
         function::{Function as FunctionObject, FunctionBody, ThisMode},
         number::{f64_to_int32, f64_to_uint32},
-        object::{Object, ObjectData, PROTOTYPE},
+        object::{GcObject, Object, ObjectData, PROTOTYPE},
         property::PropertyKey,
         value::{RcBigInt, RcString, RcSymbol, ResultValue, Type, Value},
         BigInt, Console, Number, Symbol,
@@ -679,6 +679,12 @@ impl Interpreter {
     /// Construct a new `Symbol` with an optional description.
     pub fn construct_symbol(&mut self, description: Option<RcString>) -> RcSymbol {
         RcSymbol::from(Symbol::new(self.generate_hash(), description))
+    }
+
+    /// Construct an empty object.
+    pub fn construct_object(&self) -> GcObject {
+        let object_prototype = self.global().get_field("Object").get_field(PROTOTYPE);
+        GcObject::new(Object::create(object_prototype))
     }
 }
 

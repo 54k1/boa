@@ -152,55 +152,55 @@ impl Symbol {
         {
             let mut symbol_object = symbol_object.as_object_mut().unwrap();
             let attribute = Attribute::READONLY | Attribute::NON_ENUMERABLE | Attribute::PERMANENT;
-            symbol_object.define_own_property(
+            symbol_object.insert_property(
                 "asyncIterator",
                 Property::data_descriptor(symbol_async_iterator.into(), attribute),
             );
-            symbol_object.define_own_property(
+            symbol_object.insert_property(
                 "hasInstance",
                 Property::data_descriptor(symbol_has_instance.into(), attribute),
             );
-            symbol_object.define_own_property(
+            symbol_object.insert_property(
                 "isConcatSpreadable",
                 Property::data_descriptor(symbol_is_concat_spreadable.into(), attribute),
             );
-            symbol_object.define_own_property(
+            symbol_object.insert_property(
                 "iterator",
                 Property::data_descriptor(symbol_iterator.into(), attribute),
             );
-            symbol_object.define_own_property(
+            symbol_object.insert_property(
                 "match",
                 Property::data_descriptor(symbol_match.into(), attribute),
             );
-            symbol_object.define_own_property(
+            symbol_object.insert_property(
                 "matchAll",
                 Property::data_descriptor(symbol_match_all.into(), attribute),
             );
-            symbol_object.define_own_property(
+            symbol_object.insert_property(
                 "replace",
                 Property::data_descriptor(symbol_replace.into(), attribute),
             );
-            symbol_object.define_own_property(
+            symbol_object.insert_property(
                 "search",
                 Property::data_descriptor(symbol_search.into(), attribute),
             );
-            symbol_object.define_own_property(
+            symbol_object.insert_property(
                 "species",
                 Property::data_descriptor(symbol_species.into(), attribute),
             );
-            symbol_object.define_own_property(
+            symbol_object.insert_property(
                 "split",
                 Property::data_descriptor(symbol_split.into(), attribute),
             );
-            symbol_object.define_own_property(
+            symbol_object.insert_property(
                 "toPrimitive",
                 Property::data_descriptor(symbol_to_primitive.into(), attribute),
             );
-            symbol_object.define_own_property(
+            symbol_object.insert_property(
                 "toStringTag",
                 Property::data_descriptor(symbol_to_string_tag.into(), attribute),
             );
-            symbol_object.define_own_property(
+            symbol_object.insert_property(
                 "unscopables",
                 Property::data_descriptor(symbol_unscopables.into(), attribute),
             );
