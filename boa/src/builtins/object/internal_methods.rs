@@ -21,19 +21,14 @@ impl Object {
     /// [spec]: https://tc39.es/ecma262/#sec-ordinary-object-internal-methods-and-internal-slots-hasproperty-p
     pub fn has_property(&self, property_key: &PropertyKey) -> bool {
         let prop = self.get_own_property(property_key);
-        if prop.value.is_none() {
-            let parent: Value = self.get_prototype_of();
-            if !parent.is_null() {
-                // the parent value variant should be an object
-                // In the unlikely event it isn't return false
-                return match parent {
-                    Value::Object(ref obj) => obj.borrow().has_property(property_key),
-                    _ => false,
-                };
-            }
-            return false;
+        if prop.is_none() {
+            let parent = self.get_prototype_of();
+            return if let Value::Object(ref object) = parent {
+                object.borrow().has_property(property_key)
+            } else {
+                false
+            };
         }
-
         true
     }
 
