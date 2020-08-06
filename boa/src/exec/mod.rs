@@ -677,11 +677,13 @@ impl Interpreter {
     }
 
     /// Construct a new `Symbol` with an optional description.
+    #[inline]
     pub fn construct_symbol(&mut self, description: Option<RcString>) -> RcSymbol {
         RcSymbol::from(Symbol::new(self.generate_hash(), description))
     }
 
     /// Construct an empty object.
+    #[inline]
     pub fn construct_object(&self) -> GcObject {
         let object_prototype = self.global().get_field("Object").get_field(PROTOTYPE);
         GcObject::new(Object::create(object_prototype))

@@ -264,58 +264,27 @@ impl Object {
     ///  - [ECMAScript reference][spec]
     ///
     /// [spec]: https://tc39.es/ecma262/#sec-ordinary-object-internal-methods-and-internal-slots-getownproperty-p
-    pub fn get_own_property(&self, property_key: &PropertyKey) -> Property {
+    pub fn get_own_property(&self, key: &PropertyKey) -> Property {
         let _timer = BoaProfiler::global().start_event("Object::get_own_property", "object");
 
         // Prop could either be a String or Symbol
-        match property_key {
-            PropertyKey::String(ref st) => {
-                self.properties.get(st).map_or_else(Property::empty, |v| {
-                    let mut d = Property::empty();
-                    if v.is_data_descriptor() {
-                        d.value = v.value.clone();
-                    } else {
-                        debug_assert!(v.is_accessor_descriptor());
-                        d.get = v.get.clone();
-                        d.set = v.set.clone();
-                    }
-                    d.attribute = v.attribute;
-                    d
-                })
+        let property = match key {
+            PropertyKey::Index(index) => self.indexed_properties.get(&index),
+            PropertyKey::String(ref st) => self.properties.get(st),
+            PropertyKey::Symbol(ref symbol) => self.symbol_properties.get(symbol),
+        };
+        property.map_or_else(Property::empty, |v| {
+            let mut d = Property::empty();
+            if v.is_data_descriptor() {
+                d.value = v.value.clone();
+            } else {
+                debug_assert!(v.is_accessor_descriptor());
+                d.get = v.get.clone();
+                d.set = v.set.clone();
             }
-            PropertyKey::Symbol(ref symbol) => {
-                self.symbol_properties
-                    .get(symbol)
-                    .map_or_else(Property::empty, |v| {
-                        let mut d = Property::empty();
-                        if v.is_data_descriptor() {
-                            d.value = v.value.clone();
-                        } else {
-                            debug_assert!(v.is_accessor_descriptor());
-                            d.get = v.get.clone();
-                            d.set = v.set.clone();
-                        }
-                        d.attribute = v.attribute;
-                        d
-                    })
-            }
-            PropertyKey::Index(index) => {
-                self.indexed_properties
-                    .get(&index)
-                    .map_or_else(Property::empty, |v| {
-                        let mut d = Property::empty();
-                        if v.is_data_descriptor() {
-                            d.value = v.value.clone();
-                        } else {
-                            debug_assert!(v.is_accessor_descriptor());
-                            d.get = v.get.clone();
-                            d.set = v.set.clone();
-                        }
-                        d.attribute = v.attribute;
-                        d
-                    })
-            }
-        }
+            d.attribute = v.attribute;
+            d
+        })
     }
 
     /// `Object.setPropertyOf(obj, prototype)`
