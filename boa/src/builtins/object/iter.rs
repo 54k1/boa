@@ -33,7 +33,7 @@ impl Object {
 
     /// An iterator visiting all symbol key-value pairs in arbitrary order. The iterator element type is `(&'a RcSymbol, &'a Property)`.
     ///
-    /// 
+    ///
     /// This iterator does not recurse down the prototype chain.
     #[inline]
     pub fn symbol_properties(&self) -> SymbolProperties<'_> {
