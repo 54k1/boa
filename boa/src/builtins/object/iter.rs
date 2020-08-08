@@ -3,6 +3,7 @@ use std::collections::hash_map;
 use std::iter::FusedIterator;
 
 impl Object {
+    /// An iterator visiting all key-value pairs in arbitrary order. The iterator element type is `(PropertyKey, &'a Property)`.
     #[inline]
     pub fn iter(&self) -> Iter<'_> {
         Iter {
@@ -12,62 +13,74 @@ impl Object {
         }
     }
 
+    /// An iterator visiting all keys in arbitrary order. The iterator element type is `PropertyKey`.
     #[inline]
     pub fn keys(&self) -> Keys<'_> {
         Keys(self.iter())
     }
 
+    /// An iterator visiting all values in arbitrary order. The iterator element type is `&'a Property`.
     #[inline]
     pub fn values(&self) -> Values<'_> {
         Values(self.iter())
     }
 
+    /// An iterator visiting all symbol key-value pairs in arbitrary order. The iterator element type is `(&'a RcSymbol, &'a Property)`.
     #[inline]
     pub fn symbol_properties(&self) -> SymbolProperties<'_> {
         SymbolProperties(self.symbol_properties.iter())
     }
 
+    /// An iterator visiting all symbol keys in arbitrary order. The iterator element type is `&'a RcSymbol`.
     #[inline]
     pub fn symbol_property_keys(&self) -> SymbolPropertyKeys<'_> {
         SymbolPropertyKeys(self.symbol_properties.keys())
     }
 
+    /// An iterator visiting all symbol values in arbitrary order. The iterator element type is `&'a Property`.
     #[inline]
     pub fn symbol_property_values(&self) -> SymbolPropertyValues<'_> {
         SymbolPropertyValues(self.symbol_properties.values())
     }
 
+    /// An iterator visiting all indexed key-value pairs in arbitrary order. The iterator element type is `(&'a u32, &'a Property)`.
     #[inline]
     pub fn index_properties(&self) -> IndexProperties<'_> {
         IndexProperties(self.indexed_properties.iter())
     }
 
+    /// An iterator visiting all index keys in arbitrary order. The iterator element type is `&'a u32`.
     #[inline]
     pub fn index_property_keys(&self) -> IndexPropertyKeys<'_> {
         IndexPropertyKeys(self.indexed_properties.keys())
     }
 
+    /// An iterator visiting all index values in arbitrary order. The iterator element type is `&'a Property`.
     #[inline]
     pub fn index_property_values(&self) -> IndexPropertyValues<'_> {
         IndexPropertyValues(self.indexed_properties.values())
     }
 
+    /// An iterator visiting all string key-value pairs in arbitrary order. The iterator element type is `(&'a RcString, &'a Property)`.
     #[inline]
     pub fn string_properties(&self) -> StringProperties<'_> {
         StringProperties(self.properties.iter())
     }
 
+    /// An iterator visiting all string keys in arbitrary order. The iterator element type is `&'a RcString`.
     #[inline]
     pub fn string_property_keys(&self) -> StringPropertyKeys<'_> {
         StringPropertyKeys(self.properties.keys())
     }
 
+    /// An iterator visiting all string values in arbitrary order. The iterator element type is `&'a Property`.
     #[inline]
     pub fn string_property_values(&self) -> StringPropertyValues<'_> {
         StringPropertyValues(self.properties.values())
     }
 }
 
+/// An iterator over the property entries of an `Object`
 #[derive(Debug, Clone)]
 pub struct Iter<'a> {
     indexed_properties: hash_map::Iter<'a, u32, Property>,
@@ -98,6 +111,7 @@ impl ExactSizeIterator for Iter<'_> {
 
 impl FusedIterator for Iter<'_> {}
 
+/// An iterator over the keys (`PropertyKey`) of an `Object`.
 #[derive(Debug, Clone)]
 pub struct Keys<'a>(Iter<'a>);
 
@@ -118,6 +132,7 @@ impl ExactSizeIterator for Keys<'_> {
 
 impl FusedIterator for Keys<'_> {}
 
+/// An iterator over the values (`Property`) of an `Object`.
 #[derive(Debug, Clone)]
 pub struct Values<'a>(Iter<'a>);
 
@@ -138,6 +153,7 @@ impl ExactSizeIterator for Values<'_> {
 
 impl FusedIterator for Values<'_> {}
 
+/// An iterator over the `Symbol` property entries of an `Object`
 #[derive(Debug, Clone)]
 pub struct SymbolProperties<'a>(hash_map::Iter<'a, RcSymbol, Property>);
 
@@ -164,6 +180,7 @@ impl ExactSizeIterator for SymbolProperties<'_> {
 
 impl FusedIterator for SymbolProperties<'_> {}
 
+/// An iterator over the keys (`RcSymbol`) of an `Object`.
 #[derive(Debug, Clone)]
 pub struct SymbolPropertyKeys<'a>(hash_map::Keys<'a, RcSymbol, Property>);
 
@@ -190,6 +207,7 @@ impl ExactSizeIterator for SymbolPropertyKeys<'_> {
 
 impl FusedIterator for SymbolPropertyKeys<'_> {}
 
+/// An iterator over the `Symbol` values (`Property`) of an `Object`.
 #[derive(Debug, Clone)]
 pub struct SymbolPropertyValues<'a>(hash_map::Values<'a, RcSymbol, Property>);
 
@@ -216,6 +234,7 @@ impl ExactSizeIterator for SymbolPropertyValues<'_> {
 
 impl FusedIterator for SymbolPropertyValues<'_> {}
 
+/// An iterator over the indexed property entries of an `Object`
 #[derive(Debug, Clone)]
 pub struct IndexProperties<'a>(hash_map::Iter<'a, u32, Property>);
 
@@ -242,6 +261,7 @@ impl ExactSizeIterator for IndexProperties<'_> {
 
 impl FusedIterator for IndexProperties<'_> {}
 
+/// An iterator over the index keys (`u32`) of an `Object`.
 #[derive(Debug, Clone)]
 pub struct IndexPropertyKeys<'a>(hash_map::Keys<'a, u32, Property>);
 
@@ -268,6 +288,7 @@ impl ExactSizeIterator for IndexPropertyKeys<'_> {
 
 impl FusedIterator for IndexPropertyKeys<'_> {}
 
+/// An iterator over the index values (`Property`) of an `Object`.
 #[derive(Debug, Clone)]
 pub struct IndexPropertyValues<'a>(hash_map::Values<'a, u32, Property>);
 
@@ -294,6 +315,7 @@ impl ExactSizeIterator for IndexPropertyValues<'_> {
 
 impl FusedIterator for IndexPropertyValues<'_> {}
 
+/// An iterator over the `String` property entries of an `Object`
 #[derive(Debug, Clone)]
 pub struct StringProperties<'a>(hash_map::Iter<'a, RcString, Property>);
 
@@ -320,6 +342,7 @@ impl ExactSizeIterator for StringProperties<'_> {
 
 impl FusedIterator for StringProperties<'_> {}
 
+/// An iterator over the string keys (`RcString`) of an `Object`.
 #[derive(Debug, Clone)]
 pub struct StringPropertyKeys<'a>(hash_map::Keys<'a, RcString, Property>);
 
@@ -346,6 +369,7 @@ impl ExactSizeIterator for StringPropertyKeys<'_> {
 
 impl FusedIterator for StringPropertyKeys<'_> {}
 
+/// An iterator over the string values (`Property`) of an `Object`.
 #[derive(Debug, Clone)]
 pub struct StringPropertyValues<'a>(hash_map::Values<'a, RcString, Property>);
 
