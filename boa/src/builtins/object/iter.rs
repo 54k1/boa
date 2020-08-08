@@ -4,6 +4,8 @@ use std::iter::FusedIterator;
 
 impl Object {
     /// An iterator visiting all key-value pairs in arbitrary order. The iterator element type is `(PropertyKey, &'a Property)`.
+    ///
+    /// This iterator does not recurse down the prototype chain.
     #[inline]
     pub fn iter(&self) -> Iter<'_> {
         Iter {
@@ -14,66 +16,89 @@ impl Object {
     }
 
     /// An iterator visiting all keys in arbitrary order. The iterator element type is `PropertyKey`.
+    ///
+    /// This iterator does not recurse down the prototype chain.
     #[inline]
     pub fn keys(&self) -> Keys<'_> {
         Keys(self.iter())
     }
 
     /// An iterator visiting all values in arbitrary order. The iterator element type is `&'a Property`.
+    ///
+    /// This iterator does not recurse down the prototype chain.
     #[inline]
     pub fn values(&self) -> Values<'_> {
         Values(self.iter())
     }
 
     /// An iterator visiting all symbol key-value pairs in arbitrary order. The iterator element type is `(&'a RcSymbol, &'a Property)`.
+    ///
+    /// 
+    /// This iterator does not recurse down the prototype chain.
     #[inline]
     pub fn symbol_properties(&self) -> SymbolProperties<'_> {
         SymbolProperties(self.symbol_properties.iter())
     }
 
     /// An iterator visiting all symbol keys in arbitrary order. The iterator element type is `&'a RcSymbol`.
+    ///
+    /// This iterator does not recurse down the prototype chain.
     #[inline]
     pub fn symbol_property_keys(&self) -> SymbolPropertyKeys<'_> {
         SymbolPropertyKeys(self.symbol_properties.keys())
     }
 
     /// An iterator visiting all symbol values in arbitrary order. The iterator element type is `&'a Property`.
+    ///
+    /// This iterator does not recurse down the prototype chain.
     #[inline]
     pub fn symbol_property_values(&self) -> SymbolPropertyValues<'_> {
         SymbolPropertyValues(self.symbol_properties.values())
     }
 
     /// An iterator visiting all indexed key-value pairs in arbitrary order. The iterator element type is `(&'a u32, &'a Property)`.
+    ///
+    /// This iterator does not recurse down the prototype chain.
     #[inline]
     pub fn index_properties(&self) -> IndexProperties<'_> {
         IndexProperties(self.indexed_properties.iter())
     }
 
     /// An iterator visiting all index keys in arbitrary order. The iterator element type is `&'a u32`.
+    ///
+    /// This iterator does not recurse down the prototype chain.
     #[inline]
     pub fn index_property_keys(&self) -> IndexPropertyKeys<'_> {
         IndexPropertyKeys(self.indexed_properties.keys())
     }
 
     /// An iterator visiting all index values in arbitrary order. The iterator element type is `&'a Property`.
+    ///
+    /// This iterator does not recurse down the prototype chain.
     #[inline]
     pub fn index_property_values(&self) -> IndexPropertyValues<'_> {
         IndexPropertyValues(self.indexed_properties.values())
     }
 
     /// An iterator visiting all string key-value pairs in arbitrary order. The iterator element type is `(&'a RcString, &'a Property)`.
+    ///
+    /// This iterator does not recurse down the prototype chain.
     #[inline]
     pub fn string_properties(&self) -> StringProperties<'_> {
         StringProperties(self.properties.iter())
     }
 
     /// An iterator visiting all string keys in arbitrary order. The iterator element type is `&'a RcString`.
+    ///
+    /// This iterator does not recurse down the prototype chain.
     #[inline]
     pub fn string_property_keys(&self) -> StringPropertyKeys<'_> {
         StringPropertyKeys(self.properties.keys())
     }
 
     /// An iterator visiting all string values in arbitrary order. The iterator element type is `&'a Property`.
+    ///
+    /// This iterator does not recurse down the prototype chain.
     #[inline]
     pub fn string_property_values(&self) -> StringPropertyValues<'_> {
         StringPropertyValues(self.properties.values())
